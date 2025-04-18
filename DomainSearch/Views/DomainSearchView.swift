@@ -10,10 +10,10 @@ import SwiftUI
 struct DomainSearchView: View {
     
     @StateObject private var viewModel = DomainSearchViewModel()
-    @State var path = NavigationPath()
-   
+    @StateObject private var coordinator = AppCoordinator()
+    
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: $coordinator.path) {
             Group {
                 if !viewModel.isSearching && viewModel.searchText.isEmpty {
                     VStack {
@@ -32,42 +32,41 @@ struct DomainSearchView: View {
                             .background(Color.white)
                             .cornerRadius(12)
                             .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
-                        
                         Spacer()
                     }
-
-                        
-                    
                 } else {
-                    ///Data
-                    
+
                     if AppConstants.searchStartMinLength >= viewModel.searchText.count && viewModel.resultDomains.isEmpty {
                         Text("No result")
                     } else {
                         ScrollView {
-                            LazyVStack(spacing: 4) {
+                            LazyVStack(spacing: 8) {
                                 ForEach(viewModel.resultDomains) { domain in
                                     DomainRowView(domain: domain)
-                                    Divider()
-                                        .padding(.leading)
+                                        .onTapGesture {
+                                            coordinator.navigateTo(.domainDetail(domain))
+                                        }
                                 }
                             }
                             .frame(alignment: .leading)
                             .padding(.top)
                         }
+                        .background(Color(UIColor.systemGray6))
                     }
-
+                }
+            }
+            .navigationTitle("Domain Search")
+            .searchable(text: $viewModel.searchText, prompt: "Search")
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .domainDetail(let domain):
+                    DomainPurchaseView(domain: domain)
+                        .environmentObject(coordinator)
                 }
             }
         }
-        .background(Color.gray)
-        .searchable(text: $viewModel.searchText, prompt : "Search")
-        .navigationTitle("Domain Search")
+        .environmentObject(coordinator)
     }
-    
-    
-  
-    
 }
 
 #Preview {
@@ -80,6 +79,9 @@ struct DomainRowView: View {
     var body: some View {
         HStack {
             Text(domain.domain)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .padding(.leading)
             Spacer()
         }
         .frame(maxWidth: .infinity, minHeight: 60)
