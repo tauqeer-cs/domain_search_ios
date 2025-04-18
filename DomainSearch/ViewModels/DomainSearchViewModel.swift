@@ -15,7 +15,7 @@ class DomainSearchViewModel : BaseViewModel {
     @Published var isSearching: Bool = false
     
     private let domainRepository: DomainRepositoryProtocol
-    private var searchTas: Task<Void, Never>?
+    private var searchTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     init(domainRepository: DomainRepositoryProtocol = DomainRepository() ) {
@@ -32,7 +32,7 @@ class DomainSearchViewModel : BaseViewModel {
     }
     
     private func search() {
-        searchTas?.cancel()
+        searchTask?.cancel()
         
         guard searchText.count >= AppConstants.searchStartMinLength else {
             resultDomains = []
@@ -45,7 +45,7 @@ class DomainSearchViewModel : BaseViewModel {
         isSearching = true
         
         
-        Task {
+        searchTask = Task {
             do {
                 let response = try await self.domainRepository.searchDomains(query: self.searchText)
                 await MainActor.run {
@@ -66,8 +66,8 @@ class DomainSearchViewModel : BaseViewModel {
     }
     
     func debouncedSearch() {
-        searchTas?.cancel()
-        searchTas = Task {
+        searchTask?.cancel()
+        searchTask = Task {
             try? await Task.sleep(nanoseconds: 500_000_000)
             
             if !Task.isCancelled {
@@ -79,6 +79,6 @@ class DomainSearchViewModel : BaseViewModel {
     }
     
     deinit {
-        searchTas?.cancel()
+        searchTask?.cancel()
     }
 }
