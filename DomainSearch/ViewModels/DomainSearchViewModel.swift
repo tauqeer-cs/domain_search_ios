@@ -16,17 +16,25 @@ class DomainSearchViewModel : BaseViewModel {
     
     private let domainRepository: DomainRepositoryProtocol
     private var searchTas: Task<Void, Never>?
-    
+    private var cancellables = Set<AnyCancellable>()
 
     init(domainRepository: DomainRepositoryProtocol = DomainRepository() ) {
         self.domainRepository = domainRepository
         super.init()
+        
+        $searchText
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.debouncedSearch()
+            }
+            .store(in: &cancellables)
+        
     }
     
     private func search() {
         searchTas?.cancel()
         
-        guard searchText.count > AppConstants.searchStartMinLength else {
+        guard searchText.count >= AppConstants.searchStartMinLength else {
             resultDomains = []
             isSearching = false
             return
