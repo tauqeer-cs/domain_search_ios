@@ -20,24 +20,34 @@ struct DomainSearchView: View {
                         Spacer()
                         Text("Start searching by typing a domain name in the search bar above.")
                             .multilineTextAlignment(.center)
+                            .padding(.bottom,25)
                         Spacer()
                     }
-                } else if viewModel.isLoading {
+                }
+                else if viewModel.isLoading {
                     VStack {
                         Spacer()
-                        Text("Search for a domain \(viewModel.searchText)...")
+                        Text("Search for a domain...")
                             .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.gray.opacity(0.5))
                             .padding(.horizontal, 20)
                             .padding(.vertical, 14)
-                            .background(Color.white)
                             .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+                            .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                            .padding(.bottom ,24)
                         Spacer()
+                        
                     }
-                } else {
+                }
+                else if let errorMessage = viewModel.errorMessage, viewModel.isSearching {
+                   errorView(message: errorMessage)
+                }
+                else {
 
                     if AppConstants.searchStartMinLength >= viewModel.searchText.count && viewModel.resultDomains.isEmpty {
                         Text("No result")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.gray.opacity(0.5))
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 8) {
@@ -67,6 +77,34 @@ struct DomainSearchView: View {
         }
         .environmentObject(coordinator)
     }
+    
+    private func errorView(message: String) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 50))
+                .foregroundColor(.orange)
+            
+            Text("Error")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text(message)
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Button("Try Again") {
+                viewModel.debouncedSearch()
+            }
+            .padding()
+            .foregroundColor(.white)
+            .background(Color.blue)
+            .cornerRadius(8)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
 }
 
 #Preview {
